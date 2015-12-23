@@ -11,7 +11,7 @@ class WordParser:
     def word_parse(self, content):
         result = list()
         index = 0
-        while index != len(content):
+        while index < len(content):
             index, single_item = self.next_item(content, index)
             if single_item[1] == 'end':
                 break
@@ -31,7 +31,8 @@ class WordParser:
             item = (')', 'right-bracket')
             start += 1
         else:
-            while content[start] != ')' and content[start] != '(' and (not self.space.match(content[start])):
+            while start < len(content) and content[start] != ')' and content[start] != '(' \
+                    and (not self.space.match(content[start])):
                 item += content[start]
                 start += 1
             if self.number.match(item):
@@ -87,6 +88,13 @@ class GrammarParser:
     def __init__(self):
         pass
 
+    def parse_one_round(self, item_list, start):
+        curr_item = item_list[start]
+        if curr_item[1] == 'left-bracket':
+            return self.generate_grammar_tree(item_list, start + 1)
+        else:
+            return self.generate_single_node(item_list, start)
+
     def generate_grammar_tree(self, item_list, start):
         index = start
         result_tree = GrammarTree()
@@ -94,26 +102,41 @@ class GrammarParser:
         while index < len(item_list) and count_left != 0:
             curr_item = item_list[index]
             if curr_item[1] == 'left-bracket':
-                count_left += 1
                 index, child_item = self.generate_grammar_tree(item_list, index + 1)
                 result_tree.add_child(child_item)
             elif curr_item[1] == 'right-bracket':
                 count_left -= 1
                 index += 1
             else:
-                node = GrammarNode()
-                node.set_type(curr_item[1])
-                node.set_value(curr_item[0])
+                index, node = self.generate_single_node(item_list, index)
                 result_tree.add_child(node)
-                index += 1
         return index, result_tree
+
+    @staticmethod
+    def generate_single_node(item_list, index):
+        curr_item = item_list[index]
+        node = GrammarNode()
+        node.set_type(curr_item[1])
+        node.set_value(curr_item[0])
+        return index + 1, node
+
 
 if __name__ == '__main__':
     parser = WordParser()
     grammar = GrammarParser()
-    test = '(cons (+ 1 (+ 3 4)) (cons 1 2))'
-    print test
-    index, tree = grammar.generate_grammar_tree(parser.word_parse(test), 0)
+    test = '(cons (+ 1 (+ 3 4)) (cons 1 2))(a) 9 2 3'
+    result = [item[0] for item in parser.word_parse(test)]
+    print result
+    index, tree = grammar.parse_one_round(parser.word_parse(test), 0)
     print tree.print_value(0)
+    index, tree = grammar.parse_one_round(parser.word_parse(test), index)
+    print tree.print_value(0)
+    index, tree = grammar.parse_one_round(parser.word_parse(test), index)
+    print tree.print_value(0)
+    index, tree = grammar.parse_one_round(parser.word_parse(test), index)
+    print tree.print_value(0)
+    index, tree = grammar.parse_one_round(parser.word_parse(test), index)
+    print tree.print_value(0)
+    print isinstance(tree, GrammarTree)
 
 
