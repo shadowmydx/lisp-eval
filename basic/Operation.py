@@ -71,6 +71,18 @@ def custom_if(statements, env):
     return statements[2]
 
 
+def custom_not(statements, env):
+    return not statements[0]
+
+
+def custom_and(statements, env):
+    return statements[0] and statements[1]
+
+
+def custom_or(statements, env):
+    return statements[0] or statements[1]
+
+
 if __name__ == '__main__':
     print cons((1, 2), {})
     print type(cons)

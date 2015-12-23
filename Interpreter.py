@@ -19,6 +19,9 @@ def setup_global_env():
     env.add_constraint('cdr', cdr)
     env.add_constraint('if', custom_if)
     env.add_constraint('lambda', custom_lambda)
+    env.add_constraint('or', custom_or)
+    env.add_constraint('and', custom_and)
+    env.add_constraint('not', custom_not)
     env.add_constraint('define', define)
     # env.add_constraint('+', (add, 'build-in'))
     # env.add_constraint('cons', (cons, 'build-in'))
@@ -113,5 +116,8 @@ if __name__ == '__main__':
         ))
     (sum 100)
     '''
+    interpreter(test)
+
+    test = '(not (or (> 1 2) (< 1 2)))'
     interpreter(test)
 
