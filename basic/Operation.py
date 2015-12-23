@@ -16,6 +16,10 @@ def add(arguments, env):
     return total
 
 
+def sub(arguments, env):
+    return arguments[0] - arguments[1]
+
+
 def bigger(arguments, env):
     return arguments[0] > arguments[1]
 
@@ -59,6 +63,12 @@ def custom_lambda(trees, env):
         args_list.append(arg.get_value())
     function.set_args(args_list)
     return function
+
+
+def custom_if(statements, env):
+    if statements[0]:
+        return statements[1]
+    return statements[2]
 
 
 if __name__ == '__main__':

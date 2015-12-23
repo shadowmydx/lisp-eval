@@ -35,7 +35,7 @@ class WordParser:
         while start < len(content) and self.space.match(content[start]):
             start += 1
         if start >= len(content):
-            return WordItem((-1, 'end'))
+            return start, WordItem((-1, 'end'))
         if content[start] == '(':
             item = ('(', 'left-bracket')
             item = WordItem(item)

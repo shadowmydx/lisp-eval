@@ -10,9 +10,14 @@ __author__ = 'shadowmydx'
 def setup_global_env():
     env = Environment()
     env.add_constraint('+', add)
+    env.add_constraint('-', sub)
+    env.add_constraint('>', bigger)
+    env.add_constraint('=', equal)
+    env.add_constraint('<', smaller)
     env.add_constraint('cons', cons)
     env.add_constraint('car', car)
     env.add_constraint('cdr', cdr)
+    env.add_constraint('if', custom_if)
     env.add_constraint('lambda', custom_lambda)
     env.add_constraint('define', define)
     # env.add_constraint('+', (add, 'build-in'))
@@ -51,6 +56,10 @@ def eval_expression(grammar_node, env):
                     arg_1 = grammar_node.children[1].get_value()
                     arg_2 = eval_expression(grammar_node.children[2], env)
                     return oper(tuple([arg_1, arg_2]), env)
+                elif oper_ptr.get_value() == 'if':
+                    condition = eval_expression(grammar_node.children[1], env)
+                    expression = oper(tuple([condition, grammar_node.children[2], grammar_node.children[3]]), env)
+                    return eval_expression(expression, env)
                 args = get_args(grammar_node)
                 return oper(tuple(args), env)
             elif isinstance(oper, Function):
@@ -71,23 +80,38 @@ def eval_expression(grammar_node, env):
             bind_value = env.search_bind(grammar_node.get_value())
             return bind_value
 
-if __name__ == '__main__':
+
+def interpreter(statement):
     global_env = setup_global_env()
     word_parser = WordParser()
     grammar_parser = GrammarParser()
+    item_list = word_parser.word_parse(statement)
+    next_num = 0
+    while next_num < len(item_list):
+        next_num, node = grammar_parser.parse_one_round(item_list, next_num)
+        print eval_expression(node, global_env)
+
+
+if __name__ == '__main__':
+
     # test = '(cdr (cons (+ 1 (+ 2 3) 4 (+ 3 (+ 1 2))) 3))'
     # item_list = word_parser.word_parse(test)
     # next, node = grammar_parser.parse_one_round(item_list, 0)
     # print eval_expression(node, global_env)
 
-    test = '((lambda (x y z) (+ x y z)) 1 2 3)'
-    item_list = word_parser.word_parse(test)
-    next_num, node = grammar_parser.parse_one_round(item_list, 0)
-    print eval_expression(node, global_env)
+    # test = '((lambda (x y z) (+ x y z)) 1 2 3)'
+    # interpreter(test)
+    # test = '(- 5 4)'
+    # interpreter(test)
+    test = '''
+    (define sum
+        (lambda (x) (
+            if (= 0 x)
+            0
+            (+ x (sum (- x 1))
+            ))
+        ))
+    (sum 100)
+    '''
+    interpreter(test)
 
-    test = '(define x 2) x'
-    item_list = word_parser.word_parse(test)
-    next_num, node = grammar_parser.parse_one_round(item_list, 0)
-    print eval_expression(node, global_env)
-    next_num, node = grammar_parser.parse_one_round(item_list, next_num)
-    print eval_expression(node, global_env)
