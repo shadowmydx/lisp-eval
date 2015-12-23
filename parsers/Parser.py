@@ -2,6 +2,18 @@ import re
 __author__ = 'shadowmydx'
 
 
+class WordItem:
+
+    def __init__(self, item):
+        self.item = item
+
+    def get_type(self):
+        return self.item[1]
+
+    def get_value(self):
+        return self.item[0]
+
+
 class WordParser:
 
     def __init__(self):
@@ -13,7 +25,7 @@ class WordParser:
         index = 0
         while index < len(content):
             index, single_item = self.next_item(content, index)
-            if single_item[1] == 'end':
+            if single_item.get_type() == 'end':
                 break
             result.append(single_item)
         return result
@@ -23,12 +35,14 @@ class WordParser:
         while start < len(content) and self.space.match(content[start]):
             start += 1
         if start >= len(content):
-            return -1, 'end'
+            return WordItem((-1, 'end'))
         if content[start] == '(':
             item = ('(', 'left-bracket')
+            item = WordItem(item)
             start += 1
         elif content[start] == ')':
             item = (')', 'right-bracket')
+            item = WordItem(item)
             start += 1
         else:
             while start < len(content) and content[start] != ')' and content[start] != '(' \
@@ -37,8 +51,13 @@ class WordParser:
                 start += 1
             if self.number.match(item):
                 item = (item, 'number')
+                item = WordItem(item)
+            elif item.startswith("'"):
+                item = (item, 'string')
+                item = WordItem(item)
             else:
                 item = (item, 'var')
+                item = WordItem(item)
         return start, item
 
 
@@ -57,6 +76,9 @@ class GrammarNode:
     def get_value(self):
         return self.value
 
+    def get_type(self):
+        return self.type
+
     def print_value(self, spaces):
         spaces = ''.join([' ' for i in xrange(spaces)])
         return spaces + ', '.join([str(self.value), str(self.type)])
@@ -74,6 +96,9 @@ class GrammarTree(GrammarNode):
             self.children = list()
         self.children.append(child)
 
+    def get_callable_child(self):
+        return self.children[0]
+
     def print_value(self, spaces):
         number = spaces
         spaces = ''.join([' ' for i in xrange(spaces)])
@@ -90,7 +115,7 @@ class GrammarParser:
 
     def parse_one_round(self, item_list, start):
         curr_item = item_list[start]
-        if curr_item[1] == 'left-bracket':
+        if curr_item.get_type() == 'left-bracket':
             return self.generate_grammar_tree(item_list, start + 1)
         else:
             return self.generate_single_node(item_list, start)
@@ -101,10 +126,10 @@ class GrammarParser:
         count_left = 1
         while index < len(item_list) and count_left != 0:
             curr_item = item_list[index]
-            if curr_item[1] == 'left-bracket':
+            if curr_item.get_type() == 'left-bracket':
                 index, child_item = self.generate_grammar_tree(item_list, index + 1)
                 result_tree.add_child(child_item)
-            elif curr_item[1] == 'right-bracket':
+            elif curr_item.get_type() == 'right-bracket':
                 count_left -= 1
                 index += 1
             else:
@@ -116,8 +141,8 @@ class GrammarParser:
     def generate_single_node(item_list, index):
         curr_item = item_list[index]
         node = GrammarNode()
-        node.set_type(curr_item[1])
-        node.set_value(curr_item[0])
+        node.set_type(curr_item.get_type())
+        node.set_value(curr_item.get_value())
         return index + 1, node
 
 
@@ -125,7 +150,7 @@ if __name__ == '__main__':
     parser = WordParser()
     grammar = GrammarParser()
     test = '(cons (+ 1 (+ 3 4)) (cons 1 2))(a) 9 2 3'
-    result = [item[0] for item in parser.word_parse(test)]
+    result = [item.get_value() for item in parser.word_parse(test)]
     print result
     index, tree = grammar.parse_one_round(parser.word_parse(test), 0)
     print tree.print_value(0)
