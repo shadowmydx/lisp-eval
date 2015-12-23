@@ -45,6 +45,7 @@ def cdr(target_list, env):
 
 def define(marks, env):
     env.add_constraint(marks[0], marks[1])
+    return marks[1]
 
 
 def custom_lambda(trees, env):
