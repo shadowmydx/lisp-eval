@@ -118,6 +118,9 @@ if __name__ == '__main__':
     '''
     interpreter(test)
 
-    test = '(not (or (> 1 2) (< 1 2)))'
+    test = "(not (or (= 'abc 'abc) (> 1 2)))"
+    interpreter(test)
+
+    test = "(= 'abc 'abc)"
     interpreter(test)
 
