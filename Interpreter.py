@@ -11,6 +11,8 @@ def setup_global_env():
     env = Environment()
     env.add_constraint('+', add)
     env.add_constraint('-', sub)
+    env.add_constraint('*', times)
+    env.add_constraint('/', divide)
     env.add_constraint('>', bigger)
     env.add_constraint('=', equal)
     env.add_constraint('<', smaller)
@@ -23,6 +25,11 @@ def setup_global_env():
     env.add_constraint('and', custom_and)
     env.add_constraint('not', custom_not)
     env.add_constraint('define', define)
+    env.add_constraint('begin', occupy_func)
+    env.add_constraint('display', display)
+    env.add_constraint('quote', occupy_func)
+    env.add_constraint('get-space', occupy_func)
+    env.add_constraint('concat', string_add)
     # env.add_constraint('+', (add, 'build-in'))
     # env.add_constraint('cons', (cons, 'build-in'))
     # env.add_constraint('car', (car, 'build-in'))
@@ -32,6 +39,13 @@ def setup_global_env():
 
 
 def eval_expression(grammar_node, env):
+    def get_args_string(grammar_tree):
+        result = ''
+        for ptr in xrange(1, len(grammar_tree.children)):
+            child = grammar_tree.children[ptr]
+            result += child.get_value()
+        return result
+
     def get_args(grammar_tree):
         result = list()
         for ptr in xrange(1, len(grammar_tree.children)):
@@ -42,7 +56,7 @@ def eval_expression(grammar_node, env):
 
     def execute_func(func, exe_args):
         new_env = Environment()
-        new_env.set_father_scope(env)
+        new_env.set_father_scope(func.get_scope())
         for index in xrange(len(func.get_args())):
             arg = func.get_args()[index]
             new_env.add_constraint(arg, exe_args[index])
@@ -63,6 +77,13 @@ def eval_expression(grammar_node, env):
                     condition = eval_expression(grammar_node.children[1], env)
                     expression = oper(tuple([condition, grammar_node.children[2], grammar_node.children[3]]), env)
                     return eval_expression(expression, env)
+                elif oper_ptr.get_value() == 'begin':
+                    args = get_args(grammar_node)
+                    return args[-1]
+                elif oper_ptr.get_value() == 'quote':
+                    return get_args_string(grammar_node)
+                elif oper_ptr.get_value() == 'get-space':
+                    return ' '
                 args = get_args(grammar_node)
                 return oper(tuple(args), env)
             elif isinstance(oper, Function):
@@ -86,6 +107,7 @@ def eval_expression(grammar_node, env):
 
 def interpreter(statement):
     global_env = setup_global_env()
+    global_env.set_father_scope(None)
     word_parser = WordParser()
     grammar_parser = GrammarParser()
     item_list = word_parser.word_parse(statement)
@@ -112,8 +134,7 @@ if __name__ == '__main__':
             if (= 0 x)
             0
             (+ x (sum (- x 1))
-            ))
-        ))
+            ))))
     (sum 100)
     '''
     interpreter(test)
@@ -122,5 +143,38 @@ if __name__ == '__main__':
     interpreter(test)
 
     test = "(= 'abc 'abc)"
+    interpreter(test)
+
+    test = '''
+    (begin
+        (define fac
+            (lambda (x) (
+                if (= 0 x)
+                1
+                (* x (fac (- x 1))
+                ))
+            ))
+        (fac 10))
+    '''
+    interpreter(test)
+
+    test = '''
+    (begin
+        (display (concat 'd:\hello\dd (get-space) 'world))
+        (+ 1 2))
+    '''
+    interpreter(test)
+
+    test = '''
+(define my-cons
+    (lambda (x y)
+        (lambda (m)
+            (m x y))))
+(define my-car
+    (lambda (z)
+        (z (lambda (x y)
+             y))))
+(my-car (my-cons 1 2))
+    '''
     interpreter(test)
 

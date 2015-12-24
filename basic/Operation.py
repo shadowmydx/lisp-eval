@@ -6,6 +6,10 @@ from parsers.Parser import GrammarTree
 __author__ = 'shadowmydx'
 
 
+def occupy_func(arguments, env):
+    pass
+
+
 def add(arguments, env):
     total = 0
     for item in arguments:
@@ -18,6 +22,14 @@ def add(arguments, env):
 
 def sub(arguments, env):
     return arguments[0] - arguments[1]
+
+
+def times(arguments, env):
+    return arguments[0] * arguments[1]
+
+
+def divide(arguments, env):
+    return arguments[0] / arguments[1]
 
 
 def bigger(arguments, env):
@@ -52,9 +64,15 @@ def define(marks, env):
     return marks[1]
 
 
+def display(target, env):
+    print target[0]
+    return None
+
+
 def custom_lambda(trees, env):
     function = Function()
     function.set_body(trees[1])
+    function.set_scope(env)
     args = trees[0]
     args_list = list()
     for arg in args.children:
@@ -81,6 +99,13 @@ def custom_and(statements, env):
 
 def custom_or(statements, env):
     return statements[0] or statements[1]
+
+
+def string_add(arguments, env):
+    result = ''
+    for item in arguments:
+        result += item
+    return result
 
 
 if __name__ == '__main__':

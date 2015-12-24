@@ -6,6 +6,7 @@ class Function:
     def __init__(self):
         self.grammar = None
         self.arguments = None
+        self.scope = None
 
     def set_body(self, grammar):
         self.grammar = grammar
@@ -18,3 +19,9 @@ class Function:
 
     def get_args(self):
         return self.arguments
+
+    def set_scope(self, scope):
+        self.scope = scope
+
+    def get_scope(self):
+        return self.scope
