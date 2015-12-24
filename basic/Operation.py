@@ -59,6 +59,34 @@ def cdr(target_list, env):
     return target_list[0][1:]
 
 
+def dic(env):
+    return dict()
+
+
+def put(args, env):
+    target = args[0]
+    key = args[1]
+    value = args[2]
+    target[key] = value
+    return target
+
+
+def get(args, env):
+    target = args[0]
+    key = args[1]
+    if key in target:
+        return target[key]
+    return None
+
+
+def delete(args, env):
+    target = args[0]
+    key = args[1]
+    if key in target:
+        target.pop(key)
+    return target
+
+
 def define(marks, env):
     env.add_constraint(marks[0], marks[1])
     return marks[1]

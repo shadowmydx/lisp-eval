@@ -9,6 +9,7 @@ __author__ = 'shadowmydx'
 
 def setup_global_env():
     env = Environment()
+    env.add_constraint('nil', None)
     env.add_constraint('+', add)
     env.add_constraint('-', sub)
     env.add_constraint('*', times)
@@ -30,6 +31,10 @@ def setup_global_env():
     env.add_constraint('quote', occupy_func)
     env.add_constraint('get-space', occupy_func)
     env.add_constraint('concat', string_add)
+    env.add_constraint('build-dict', dic)
+    env.add_constraint('add-dict-item', put)
+    env.add_constraint('get-dict-item', get)
+    env.add_constraint('delete-dict-item', delete)
     # env.add_constraint('+', (add, 'build-in'))
     # env.add_constraint('cons', (cons, 'build-in'))
     # env.add_constraint('car', (car, 'build-in'))
@@ -84,6 +89,8 @@ def eval_expression(grammar_node, env):
                     return get_args_string(grammar_node)
                 elif oper_ptr.get_value() == 'get-space':
                     return ' '
+                elif oper_ptr.get_value() == 'build-dict':
+                    return oper(env)
                 args = get_args(grammar_node)
                 return oper(tuple(args), env)
             elif isinstance(oper, Function):
@@ -178,3 +185,10 @@ if __name__ == '__main__':
     '''
     interpreter(test)
 
+    test = '''
+    (define used (build-dict))
+    (add-dict-item used 'abc 1)
+    (get-dict-item used 'abc)
+    (delete-dict-item used 'abc)
+    '''
+    interpreter(test)
