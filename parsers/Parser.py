@@ -49,11 +49,11 @@ class WordParser:
                     and (not self.space.match(content[start])):
                 item += content[start]
                 start += 1
-            if self.number.match(item):
-                item = (item, 'number')
-                item = WordItem(item)
-            elif item.startswith("'"):
+            if item.startswith("'"):
                 item = (item, 'string')
+                item = WordItem(item)
+            elif self.number.match(item):
+                item = (item, 'number')
                 item = WordItem(item)
             else:
                 item = (item, 'var')
@@ -149,19 +149,7 @@ class GrammarParser:
 if __name__ == '__main__':
     parser = WordParser()
     grammar = GrammarParser()
-    test = '(cons (+ 1 (+ 3 4)) (cons 1 2))(a) 9 2 3'
-    result = [item.get_value() for item in parser.word_parse(test)]
-    print result
-    index, tree = grammar.parse_one_round(parser.word_parse(test), 0)
-    print tree.print_value(0)
-    index, tree = grammar.parse_one_round(parser.word_parse(test), index)
-    print tree.print_value(0)
-    index, tree = grammar.parse_one_round(parser.word_parse(test), index)
-    print tree.print_value(0)
-    index, tree = grammar.parse_one_round(parser.word_parse(test), index)
-    print tree.print_value(0)
-    index, tree = grammar.parse_one_round(parser.word_parse(test), index)
-    print tree.print_value(0)
-    print isinstance(tree, GrammarTree)
+    test = "'1234"
+    print parser.word_parse(test)[0].get_type()
 
 

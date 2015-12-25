@@ -2,8 +2,10 @@ from parsers.Parser import GrammarParser
 from parsers.Parser import WordParser
 from parsers.Parser import GrammarNode
 from basic.Operation import *
+from basic.Plugin import *
 from parsers.Parser import GrammarTree
 from runtime.Environment import Environment
+import sys
 __author__ = 'shadowmydx'
 
 
@@ -29,12 +31,16 @@ def setup_global_env():
     env.add_constraint('begin', occupy_func)
     env.add_constraint('display', display)
     env.add_constraint('quote', occupy_func)
+    env.add_constraint('get-quote', occupy_func)
     env.add_constraint('get-space', occupy_func)
     env.add_constraint('concat', string_add)
     env.add_constraint('build-dict', dic)
     env.add_constraint('add-dict-item', put)
     env.add_constraint('get-dict-item', get)
     env.add_constraint('delete-dict-item', delete)
+    env.add_constraint('null?', is_null)
+    env.add_constraint('list', custom_list)
+    env.add_constraint('map', occupy_func)
     # env.add_constraint('+', (add, 'build-in'))
     # env.add_constraint('cons', (cons, 'build-in'))
     # env.add_constraint('car', (car, 'build-in'))
@@ -91,6 +97,15 @@ def eval_expression(grammar_node, env):
                     return ' '
                 elif oper_ptr.get_value() == 'build-dict':
                     return oper(env)
+                elif oper_ptr.get_value() == 'get-quote':
+                    return '\''
+                elif oper_ptr.get_value() == 'map':
+                    args = get_args(grammar_node)
+                    func = args[0]
+                    array = args[1]
+                    for index in xrange(len(array)):
+                        array[index] = execute_func(func, [array[index]])
+                    return array
                 args = get_args(grammar_node)
                 return oper(tuple(args), env)
             elif isinstance(oper, Function):
@@ -112,8 +127,17 @@ def eval_expression(grammar_node, env):
             return bind_value
 
 
+def setup_plugin(env):
+    env.add_constraint('write-file', write_file)
+    env.add_constraint('get-by-column', get_by_column)
+    env.add_constraint('set-by-column', set_by_column)
+    env.add_constraint('split-sql', split_sql)
+    env.add_constraint('open-file', open_file)
+
+
 def interpreter(statement):
     global_env = setup_global_env()
+    setup_plugin(global_env)
     global_env.set_father_scope(None)
     word_parser = WordParser()
     grammar_parser = GrammarParser()
@@ -124,71 +148,32 @@ def interpreter(statement):
         print eval_expression(node, global_env)
 
 
+def interpreter_file(path):
+    f = open(path, 'r')
+    statement = f.read()
+    f.close()
+    interpreter(statement)
+
+
 if __name__ == '__main__':
+    sys.setrecursionlimit(2000)
+#     test = '''
+# (define my-cons
+#     (lambda (x y)
+#         (lambda (m)
+#             (m x y))))
+# (define my-car
+#     (lambda (z)
+#         (z (lambda (x y)
+#              y))))
+# (my-car (my-cons 1 2))
+#     '''
+#     interpreter(test)
+#     test = '''
+# (concat (get-quote) '16618463666 (get-quote))
+#     '''
+#     interpreter(test)
+    interpreter_file('./test.lisp')
 
-    # test = '(cdr (cons (+ 1 (+ 2 3) 4 (+ 3 (+ 1 2))) 3))'
-    # item_list = word_parser.word_parse(test)
-    # next, node = grammar_parser.parse_one_round(item_list, 0)
-    # print eval_expression(node, global_env)
 
-    # test = '((lambda (x y z) (+ x y z)) 1 2 3)'
-    # interpreter(test)
-    # test = '(- 5 4)'
-    # interpreter(test)
-    test = '''
-    (define sum
-        (lambda (x) (
-            if (= 0 x)
-            0
-            (+ x (sum (- x 1))
-            ))))
-    (sum 100)
-    '''
-    interpreter(test)
 
-    test = "(not (or (= 'abc 'abc) (> 1 2)))"
-    interpreter(test)
-
-    test = "(= 'abc 'abc)"
-    interpreter(test)
-
-    test = '''
-    (begin
-        (define fac
-            (lambda (x) (
-                if (= 0 x)
-                1
-                (* x (fac (- x 1))
-                ))
-            ))
-        (fac 10))
-    '''
-    interpreter(test)
-
-    test = '''
-    (begin
-        (display (concat 'd:\hello\dd (get-space) 'world))
-        (+ 1 2))
-    '''
-    interpreter(test)
-
-    test = '''
-(define my-cons
-    (lambda (x y)
-        (lambda (m)
-            (m x y))))
-(define my-car
-    (lambda (z)
-        (z (lambda (x y)
-             y))))
-(my-car (my-cons 1 2))
-    '''
-    interpreter(test)
-
-    test = '''
-    (define used (build-dict))
-    (add-dict-item used 'abc 1)
-    (get-dict-item used 'abc)
-    (delete-dict-item used 'abc)
-    '''
-    interpreter(test)

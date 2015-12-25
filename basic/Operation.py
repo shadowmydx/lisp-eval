@@ -46,8 +46,13 @@ def equal(arguments, env):
 
 def cons(items, env):
     result = list()
-    result.append(items[0])
-    result.append(items[1])
+    item_1 = items[0]
+    item_2 = items[1]
+    result.append(item_1)
+    if isinstance(item_2, list):
+        result += item_2
+    else:
+        result.append(item_2)
     return result
 
 
@@ -56,6 +61,8 @@ def car(target_list, env):
 
 
 def cdr(target_list, env):
+    if len(target_list[0]) == 0:
+        return None
     return target_list[0][1:]
 
 
@@ -97,6 +104,13 @@ def display(target, env):
     return None
 
 
+def custom_list(arguments, env):
+    result = list()
+    for item in arguments:
+        result.append(item)
+    return result
+
+
 def custom_lambda(trees, env):
     function = Function()
     function.set_body(trees[1])
@@ -134,6 +148,10 @@ def string_add(arguments, env):
     for item in arguments:
         result += item
     return result
+
+
+def is_null(arguments, env):
+    return arguments[0] is None or len(arguments[0]) == 0
 
 
 if __name__ == '__main__':
