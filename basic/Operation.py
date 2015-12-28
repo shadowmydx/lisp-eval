@@ -150,6 +150,20 @@ def string_add(arguments, env):
     return result
 
 
+def build_error_dict(arguments, env):
+    path = arguments[0]
+    f = open(path, 'r')
+    mark = dict()
+    result = (line.strip('\n') for line in f)
+    for line in result:
+        item = line.split(',')
+        if len(item) > 2 and item[-1] == 'ref_error':
+            mark[item[1]] = list()
+            for index in xrange(2, len(item) - 1):
+                mark[item[1]].append(item[index])
+    return mark
+
+
 def is_null(arguments, env):
     return arguments[0] is None or len(arguments[0]) == 0
 

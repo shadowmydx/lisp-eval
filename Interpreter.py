@@ -70,7 +70,11 @@ def eval_expression(grammar_node, env):
         new_env.set_father_scope(func.get_scope())
         for index in xrange(len(func.get_args())):
             arg = func.get_args()[index]
-            new_env.add_constraint(arg, exe_args[index])
+            try:
+                new_env.add_constraint(arg, exe_args[index])
+            except IndexError:
+                print exe_args, func.get_args()
+                raise IndexError
         return eval_expression(func.get_body(), new_env)
 
     if isinstance(grammar_node, GrammarTree):
@@ -133,6 +137,7 @@ def setup_plugin(env):
     env.add_constraint('set-by-column', set_by_column)
     env.add_constraint('split-sql', split_sql)
     env.add_constraint('open-file', open_file)
+    env.add_constraint('build-error-dict', build_error_dict)
 
 
 def interpreter(statement):
@@ -173,6 +178,17 @@ if __name__ == '__main__':
 # (concat (get-quote) '16618463666 (get-quote))
 #     '''
 #     interpreter(test)
+    test = '''
+    ((lambda (x)
+        (+ x 1)) 1)
+    '''
+    # interpreter(test)
+    test = '''
+(define N/A
+    (concat (get-quote) 'N/A (get-quote)))
+    '''
+    # interpreter(test)
+
     interpreter_file('./test.lisp')
 
 
