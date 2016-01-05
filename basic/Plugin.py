@@ -128,7 +128,7 @@ def write_file(arguments, env):
     content = arguments[1]
     content = ';'.join(content) + ';'
     f = open(path, 'w')
-    f.write(content)
+    f.write(content + '\n/')
     f.close()
     return None
 

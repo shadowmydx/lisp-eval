@@ -189,7 +189,9 @@ if __name__ == '__main__':
     '''
     # interpreter(test)
 
-    interpreter_file('./test.lisp')
-
-
+    interpreter_file('./story.lisp')
+    interpreter_file('./defect.lisp')
+    interpreter_file('./task.lisp')
+    interpreter_file('./testcase.lisp')
+    interpreter_file('./feature.lisp')
 

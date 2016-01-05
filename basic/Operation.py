@@ -157,7 +157,7 @@ def build_error_dict(arguments, env):
     result = (line.strip('\n') for line in f)
     for line in result:
         item = line.split(',')
-        if len(item) > 2 and item[-1] == 'ref_error':
+        if len(item) > 2:
             mark[item[1]] = list()
             for index in xrange(2, len(item) - 1):
                 mark[item[1]].append(item[index])
