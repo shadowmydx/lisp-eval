@@ -1,6 +1,6 @@
 from parsers.Parser import GrammarParser
 from parsers.Parser import WordParser
-from parsers.Parser import GrammarNode
+from basic.LazyFunction import LazyFunction
 from basic.Operation import *
 from basic.Plugin import *
 from parsers.Parser import GrammarTree
@@ -128,6 +128,106 @@ def eval_expression(grammar_node, env):
             return str(grammar_node.get_value()[1:])
         elif grammar_node.get_type() == 'var':
             bind_value = env.search_bind(grammar_node.get_value())
+            if isinstance(bind_value, LazyFunction):
+                result = eval_expression(bind_value.get_executable(), bind_value.get_environment())
+                env.add_constraint(grammar_node.get_value(), result)
+                return result
+            return bind_value
+
+
+def lazy_eval_expression(grammar_node, env):
+    def get_args_string(grammar_tree):
+        result = ''
+        for ptr in xrange(1, len(grammar_tree.children)):
+            child = grammar_tree.children[ptr]
+            result += child.get_value()
+        return result
+
+    def get_args_strict(grammar_tree):
+        result = list()
+        for ptr in xrange(1, len(grammar_tree.children)):
+            child = grammar_tree.children[ptr]
+            eval_item = eval_expression(child, env)
+            result.append(eval_item)
+        return result
+
+    def get_args(grammar_tree):
+        result = list()
+        for ptr in xrange(1, len(grammar_tree.children)):
+            child = grammar_tree.children[ptr]
+            eval_item = LazyFunction()
+            eval_item.set_executable(child)
+            eval_item.set_environment(env)
+            result.append(eval_item)
+        return result
+
+    def execute_func(func, exe_args):
+        new_env = Environment()
+        new_env.set_father_scope(func.get_scope())
+        for index in xrange(len(func.get_args())):
+            arg = func.get_args()[index]
+            try:
+                new_env.add_constraint(arg, exe_args[index])
+            except IndexError:
+                print exe_args, func.get_args()
+                raise IndexError
+        return lazy_eval_expression(func.get_body(), new_env)
+
+    if isinstance(grammar_node, GrammarTree):
+        oper_ptr = grammar_node.get_callable_child()
+        if not isinstance(oper_ptr, GrammarTree):
+            oper = env.search_bind(oper_ptr.get_value())
+            if callable(oper):
+                if oper_ptr.get_value() == 'lambda':
+                    return oper(tuple([grammar_node.children[1], grammar_node.children[2]]), env)
+                elif oper_ptr.get_value() == 'define':
+                    arg_1 = grammar_node.children[1].get_value()
+                    arg_2 = eval_expression(grammar_node.children[2], env)
+                    return oper(tuple([arg_1, arg_2]), env)
+                elif oper_ptr.get_value() == 'if':
+                    condition = eval_expression(grammar_node.children[1], env)
+                    expression = oper(tuple([condition, grammar_node.children[2], grammar_node.children[3]]), env)
+                    return eval_expression(expression, env)
+                elif oper_ptr.get_value() == 'begin':
+                    args = get_args_strict(grammar_node)
+                    return args[-1]
+                elif oper_ptr.get_value() == 'quote':
+                    return get_args_string(grammar_node)
+                elif oper_ptr.get_value() == 'get-space':
+                    return ' '
+                elif oper_ptr.get_value() == 'build-dict':
+                    return oper(env)
+                elif oper_ptr.get_value() == 'get-quote':
+                    return '\''
+                elif oper_ptr.get_value() == 'map':
+                    args = get_args_strict(grammar_node)
+                    func = args[0]
+                    array = args[1]
+                    for index in xrange(len(array)):
+                        array[index] = execute_func(func, [array[index]])
+                    return array
+                args = get_args_strict(grammar_node)
+                return oper(tuple(args), env)
+            elif isinstance(oper, Function):
+                args = get_args(grammar_node)
+                return execute_func(oper, args)
+        elif isinstance(oper_ptr, GrammarTree):
+            # lambda function execute.
+            function = eval_expression(oper_ptr, env)
+            args = get_args(grammar_node)
+            return execute_func(function, args)
+
+    elif isinstance(grammar_node, GrammarNode):
+        if grammar_node.get_type() == 'number':
+            return int(grammar_node.get_value())
+        elif grammar_node.get_type() == 'string':
+            return str(grammar_node.get_value()[1:])
+        elif grammar_node.get_type() == 'var':
+            bind_value = env.search_bind(grammar_node.get_value())
+            if isinstance(bind_value, LazyFunction):
+                result = lazy_eval_expression(bind_value.get_executable(), bind_value.get_environment())
+                env.add_constraint(grammar_node.get_value(), result)
+                return result
             return bind_value
 
 
@@ -151,6 +251,19 @@ def interpreter(statement):
     while next_num < len(item_list):
         next_num, node = grammar_parser.parse_one_round(item_list, next_num)
         print eval_expression(node, global_env)
+
+
+def lazy_interpreter(statement):
+    global_env = setup_global_env()
+    setup_plugin(global_env)
+    global_env.set_father_scope(None)
+    word_parser = WordParser()
+    grammar_parser = GrammarParser()
+    item_list = word_parser.word_parse(statement)
+    next_num = 0
+    while next_num < len(item_list):
+        next_num, node = grammar_parser.parse_one_round(item_list, next_num)
+        print lazy_eval_expression(node, global_env)
 
 
 def interpreter_file(path):
@@ -186,12 +299,25 @@ if __name__ == '__main__':
     test = '''
 (define N/A
     (concat (get-quote) 'N/A (get-quote)))
+(define add-x
+    (lambda (x) (+ x 3)))
+(add-x 3)
+(define new-if
+    (lambda (x y)
+        x))
+(define dead
+    (lambda (x)
+        (dead x)))
+(new-if 1 (dead 3))
+(define Y
+    (lambda (F)
+        (F (Y F))))
     '''
-    # interpreter(test)
+    lazy_interpreter(test)
 
-    interpreter_file('./story.lisp')
-    interpreter_file('./defect.lisp')
-    interpreter_file('./task.lisp')
-    interpreter_file('./testcase.lisp')
-    interpreter_file('./feature.lisp')
+    # interpreter_file('./story.lisp')
+    # interpreter_file('./defect.lisp')
+    # interpreter_file('./task.lisp')
+    # interpreter_file('./testcase.lisp')
+    # interpreter_file('./feature.lisp')
 
